@@ -1,0 +1,52 @@
+name: Manual service Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      microservice:
+        description: 'Name of microservice to deploy'
+        required: true
+        type: choice
+        options:
+        - sample-tracker
+        - lakehouse
+      environment:
+        description: 'Environment to deploy microservice'
+        required: true
+        type: choice
+        options:
+        - production
+        - staging
+
+jobs:
+  deploy-production-sample-tracker:
+    runs-on: ubuntu:latest
+    if: ${{ (inputs.microservice == 'sample-tracker') && (inputs.environment == 'production') }}
+    container:
+      image: docker/compose:1.27.4
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: stable
+      - name: Deployment
+        run: | 
+            cd microservices/sample_tracker
+            export COMPOSE_DOCKER_CLI_BUILD=1
+            export DOCKER_BUILDKIT=1
+            docker-compose -f docker-compose-prod.yml up --build -d
+
+  deploy-staging-sample-tracker:
+    runs-on: ubuntu:latest
+    if: ${{ (inputs.microservice == 'sample-tracker') && (inputs.environment == 'staging') }}
+    container:
+      image: docker/compose:1.27.4
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+      - name: Deploy to staging
+        run: | 
+            cd microservices/sample_tracker
+            export COMPOSE_DOCKER_CLI_BUILD=1
+            export DOCKER_BUILDKIT=1
+            docker-compose -f docker-compose-staging.yml up --build -d
